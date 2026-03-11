@@ -3,60 +3,66 @@ import os
 NOME_ARQUIVO = "tarefas.txt"
 
 def carregar_tarefas():
-    """Lê as tarefas do arquivo .txt ao iniciar o programa."""
     if not os.path.exists(NOME_ARQUIVO):
         return []
+    tarefas = []
     with open(NOME_ARQUIVO, "r", encoding="utf-8") as arquivo:
-        # .strip() remove a quebra de linha (\n) ao ler
-        return [linha.strip() for linha in arquivo.readlines()]
+        for linha in arquivo:
+            # Dividimos a linha pelo separador '|'
+            partes = linha.strip().split(" | ")
+            if len(partes) == 2:
+                nome, status = partes
+                # Convertemos a string 'True'/'False' de volta para booleano
+                tarefas.append({"nome": nome, "concluida": status == "True"})
+    return tarefas
 
 def salvar_tarefas(tarefas):
-    """Salva a lista atual no arquivo .txt."""
     with open(NOME_ARQUIVO, "w", encoding="utf-8") as arquivo:
-        for tarefa in tarefas:
-            arquivo.write(f"{tarefa}\n")
+        for t in tarefas:
+            arquivo.write(f"{t['nome']} | {t['concluida']}\n")
 
-def gerenciar_tarefas():
+def mostrar_tarefas(tarefas):
+    if not tarefas:
+        print("\nLista vazia.")
+    else:
+        print("\n--- SUAS TAREFAS ---")
+        for i, t in enumerate(tarefas, 1):
+            # Operador ternário para o ícone de status
+            status = "[X]" if t['concluida'] else "[ ]"
+            print(f"{i}. {status} {t['nome']}")
+
+def gerenciar():
     tarefas = carregar_tarefas()
     
     while True:
-        print(f"\n--- TODO LIST ({len(tarefas)} tarefas) ---")
-        print("1. Adicionar | 2. Mostrar | 3. Remover | 4. Sair")
-        
+        mostrar_tarefas(tarefas)
+        print("\n1. Add | 2. Concluir/Desmarcar | 3. Remover | 4. Sair")
         escolha = input("Escolha: ")
 
         if escolha == '1':
-            nova = input("Digite a tarefa: ").strip()
-            if nova:
-                tarefas.append(nova)
-                print("Adicionada!")
-
+            nome = input("Tarefa: ").strip()
+            if nome:
+                tarefas.append({"nome": nome, "concluida": False})
+        
         elif escolha == '2':
-            if not tarefas:
-                print("Lista vazia.")
-            else:
-                for i, t in enumerate(tarefas, 1):
-                    print(f"{i}. {t}")
+            try:
+                idx = int(input("Número da tarefa para alternar status: ")) - 1
+                # Inverte o valor booleano (se True vira False e vice-versa)
+                tarefas[idx]['concluida'] = not tarefas[idx]['concluida']
+            except (ValueError, IndexError):
+                print("Escolha inválida!")
 
         elif escolha == '3':
-            if not tarefas:
-                print("Nada para remover.")
-                continue
-            
-            # VALIDAÇÃO COM TRY/EXCEPT
             try:
-                indice = int(input("Número da tarefa para remover: ")) - 1
-                removida = tarefas.pop(indice)
-                print(f"Removido: {removida}")
-            except ValueError:
-                print("Erro: Digite apenas números inteiros!")
-            except IndexError:
-                print(f"Erro: Escolha um número entre 1 e {len(tarefas)}.")
+                idx = int(input("Remover qual número? ")) - 1
+                tarefas.pop(idx)
+            except (ValueError, IndexError):
+                print("Erro ao remover.")
 
         elif escolha == '4':
             salvar_tarefas(tarefas)
-            print("Dados salvos. Até logo!")
+            print("Salvo com sucesso!")
             break
 
 if __name__ == "__main__":
-    gerenciar_tarefas()
+    gerenciar()
